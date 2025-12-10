@@ -1,0 +1,39 @@
+version: 0.2
+
+env:
+  # These can be set here OR as environment variables in the CodeBuild console.
+  variables:
+    AWS_ACCOUNT_ID: "123456789012" # replace with your account or set in CodeBuild env vars
+    AWS_DEFAULT_REGION: "eu-central-1" # replace with your region or set in CodeBuild env vars
+    ECR_REPOSITORY_FRONTEND: "aiblog/frontend"
+    ECR_REPOSITORY_BACKEND: "aiblog/backend"
+
+phases:
+  install:
+    runtime-versions:
+      docker: 20
+    commands:
+      - echo "Installing dependencies..."
+  pre_build:
+    commands:
+      - echo "Logging in to Amazon ECR..."
+      - aws --version
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION \
+        | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - IMAGE_TAG=${CODEBUILD_RESOLVED_SOURCE_VERSION:0:7}
+      - echo "IMAGE_TAG=$IMAGE_TAG"
+  build:
+    commands:
+      - echo "Building frontend..."
+      - docker build -f frontend/Dockerfile -t $ECR_REPOSITORY_FRONTEND:latest ./frontend
+      - docker tag $ECR_REPOSITORY_FRONTEND:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
+
+      - echo "Building backend..."
+      - docker build -f backend/Dockerfile -t $ECR_REPOSITORY_BACKEND:latest ./backend
+      - docker tag $ECR_REPOSITORY_BACKEND:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo "Pushing frontend..."
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
+      - echo "Pushing backend..."
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
