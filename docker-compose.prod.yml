@@ -1,12 +1,16 @@
-version: "3.8"
 services:
   backend:
     restart: always
-    image: ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${BACKEND_REPOSITORY}:${TAG:-latest}
+    image: ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${BACKEND_REPOSITORY}:${TAG:-latest}
     expose:
       - "3000"
-    env_file:
-      - ./backend/.env # ensure this file exists on EC2
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - OPENROUTER_URL=${OPENROUTER_URL}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL}
     networks:
       - aiblog-network
     depends_on:
@@ -27,13 +31,13 @@ services:
 
   frontend:
     restart: always
-    image: ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${FRONTEND_REPOSITORY}:${TAG:-latest}
+    image: ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${FRONTEND_REPOSITORY}:${TAG:-latest}
     expose:
       - "3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - VITE_BACKEND_API_URL=http://localhost
+      - VITE_BACKEND_API_URL=${DOMAIN}
     depends_on:
       backend:
         condition: service_healthy
@@ -52,7 +56,7 @@ services:
     networks:
       - aiblog-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d aiblogdb -U admin"]
+      test: ["CMD-SHELL", "pg_isready -d $${DB_NAME} -U $${DB_USER}"]
       interval: 5s
       timeout: 5s
       retries: 3
