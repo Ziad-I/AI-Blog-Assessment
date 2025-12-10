@@ -3,7 +3,7 @@ services:
     restart: always
     image: ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${BACKEND_REPOSITORY}:${TAG:-latest}
     labels:
-      - "com.centurylinklabs.watchtower.enable=false"
+      - "com.centurylinklabs.watchtower.enable=true"
     expose:
       - "3000"
     environment:
@@ -35,7 +35,7 @@ services:
     restart: always
     image: ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${FRONTEND_REPOSITORY}:${TAG:-latest}
     labels:
-      - "com.centurylinklabs.watchtower.enable=false"
+      - "com.centurylinklabs.watchtower.enable=true"
     expose:
       - "3001"
     environment:
@@ -87,16 +87,18 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /usr/bin/docker-credential-ecr-login:/usr/bin/docker-credential-ecr-login:ro
+      - helper:/go/bin
       - /home/ubuntu/.docker/config.json:/config.json:ro
-      - /root/.docker/config.json:/root/.docker/config.json:ro
+    environment:
+      - HOME=/
+      - PATH=$PATH:/go/bin
     command:
       - --interval
-      - "300"
+      - "30"
       - --cleanup
       - --label-enable
       - --include-restarting
-      - --run-once=true
+      - --run-once=false
     networks:
       - aiblog-network
 
@@ -104,6 +106,8 @@ volumes:
   postgres_data:
   caddy_data:
   caddy_config:
+  helper:
+    external: true
 
 networks:
   aiblog-network:
