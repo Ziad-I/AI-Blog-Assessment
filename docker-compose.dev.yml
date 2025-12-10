@@ -1,0 +1,92 @@
+services:
+  backend:
+    restart: unless-stopped
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: ./backend/.env
+        required: true
+    networks:
+      - aiblog-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode === 200) process.exit(0); else process.exit(1);})",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  frontend:
+    restart: unless-stopped
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    expose:
+      - "3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - VITE_BACKEND_API_URL=http://localhost
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - aiblog-network
+
+  postgres:
+    restart: unless-stopped
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=adminpassword
+      - POSTGRES_DB=aiblogdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - aiblog-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d aiblogdb -U admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - aiblog-network
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  aiblog-network:
+    driver: bridge
