@@ -78,6 +78,22 @@ services:
       - frontend
       - backend
 
+  watchtower:
+    image: containrrr/watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker-credential-ecr-login:/usr/bin/docker-credential-ecr-login:ro
+      - /home/ubuntu/.docker/config.json:/config.json:ro
+      - /root/.docker/config.json:/root/.docker/config.json:ro
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+    command: --interval 300 backend frontend
+    networks:
+      - aiblog-network
+
 volumes:
   postgres_data:
   caddy_data:
