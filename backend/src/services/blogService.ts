@@ -74,7 +74,7 @@ export async function generateBlog(topic?: string) {
 
   const data: any = await response.json();
 
-  const generatedContent = data.choices[0].message.content;
+  const generatedContent = data.choices[0].message.content.trim();
 
   const [titleRaw, ...contentParts] = generatedContent.split("\n");
   const title = titleRaw.replace(/^#\s*/, "").trim();

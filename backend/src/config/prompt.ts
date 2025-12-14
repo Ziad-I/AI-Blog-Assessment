@@ -38,11 +38,8 @@ export function makePrompts(
   ];
 
   const chosenFormat = pick(FORMATS, opts?.format);
-  console.log("Chosen format:", chosenFormat);
   const chosenTone = pick(TONES, opts?.tone);
-  console.log("Chosen tone:", chosenTone);
   const chosenPov = pick(POVS, opts?.pov);
-  console.log("Chosen POV:", chosenPov);
 
   const userPrompt = `Write a detailed blog post about "${blogTopic}" **using proper Markdown syntax**.
 

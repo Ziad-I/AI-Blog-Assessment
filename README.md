@@ -87,7 +87,7 @@ The backend includes a **cron job that runs daily at midnight (00:00 UTC)** to a
 |--------|----------|-------------|
 | GET | `/api/blogs` | Get all blog posts |
 | GET | `/api/blogs/:id` | Get a specific blog post |
-| GET | `/api/blogs/generate` | Manually trigger blog post generation |
+| POST | `/api/blogs/generate` | Manually trigger blog post generation, can send {"topic": "some topic"} payload to specify generation topic  |
 | GET | `/health` | Health check endpoint |
 
 
